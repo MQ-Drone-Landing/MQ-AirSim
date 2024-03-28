@@ -164,6 +164,18 @@ __pragma(warning(disable : 4239))
                           << ver_info << std::endl;
         }
 
+        bool RpcLibClientBase::simSetNPCSpeed(const std::string& object_name, float speed) const
+        {
+            return pimpl_->client.call("simSetNPCSpeed", object_name, speed).as<bool>();
+
+        }
+
+        bool RpcLibClientBase::simMoveNPCTo(const std::string& object_name, const msr::airlib::Pose& pose)
+        {
+            return pimpl_->client.call("simMoveNPCTo", object_name, RpcLibAdaptorsBase::Pose(pose)).as<bool>();
+
+        }
+
         bool RpcLibClientBase::armDisarm(bool arm, const std::string& vehicle_name)
         {
             return pimpl_->client.call("armDisarm", arm, vehicle_name).as<bool>();

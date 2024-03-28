@@ -12,6 +12,12 @@
 #include <cstdlib>
 #include <ctime>
 #include <algorithm>
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/Pawn.h"
+#include "Blueprint/AIBlueprintHelperLibrary.h"
+#include "AIController.h"
+#include "NavigationSystem.h"
 
 WorldSimApi::WorldSimApi(ASimModeBase* simmode)
     : simmode_(simmode) {}
@@ -37,6 +43,48 @@ bool WorldSimApi::loadLevel(const std::string& level_name)
     this->simmode_->toggleLoadingScreen(false);
 
     return success;
+}
+
+bool WorldSimApi::moveNPCTo(const std::string& object_name, const WorldSimApi::Pose& pose)
+{
+    bool result = false;
+
+
+
+    FTransform actor_transform = simmode_->getGlobalNedTransform().fromGlobalNed(pose);
+    AActor* actor = simmode_->scene_object_map.FindRef(FString(object_name.c_str()));
+    APawn* pawn;
+    pawn = Cast<APawn>(actor);
+    AAIController* controller = Cast<AAIController>(pawn->GetController());
+    if (controller)
+    {
+        controller->MoveToLocation(actor_transform.GetLocation(), -1.0f);
+        
+        result = true;
+    }
+
+    
+
+    return result;
+}
+
+bool WorldSimApi::setNPCSpeed(const std::string& object_name, float speed)
+{
+    bool result = false;
+    ACharacter* animal;
+    UCharacterMovementComponent* moveComp;
+
+    AActor* actor = simmode_->scene_object_map.FindRef(FString(object_name.c_str()));
+    animal = Cast<ACharacter>(actor);
+    moveComp = Cast<UCharacterMovementComponent>(animal->GetMovementComponent());
+    if(moveComp)
+    {
+        moveComp->MaxWalkSpeed = speed;
+        result = true;
+    }
+
+    return result;
+
 }
 
 void WorldSimApi::spawnPlayer()

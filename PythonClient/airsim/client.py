@@ -158,6 +158,12 @@ class VehicleClient:
             print(ver_info)
         print('')
 
+    def simSetNPCSpeed(self, obj_name, speed):
+        return self.client.call("simSetNPCSpeed", obj_name,  speed)
+    
+    def simMoveNPCTo(self, obj_name, pose):
+        return self.client.call("simMoveNPCTo", obj_name,  pose)
+
     def simSetLightIntensity(self, light_name, intensity):
         """
         Change intensity of named light

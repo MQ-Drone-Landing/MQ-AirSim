@@ -100,6 +100,15 @@ namespace airlib
             return 1;
         });
 
+        pimpl_->server.bind("simSetNPCSpeed", [&](const std::string& object_name, float speed) -> bool {
+            return getWorldSimApi()->setNPCSpeed(object_name, speed);
+
+        });
+        pimpl_->server.bind("simMoveNPCTo", [&](const std::string& object_name, const RpcLibAdaptorsBase::Pose& pose) -> bool {
+            return getWorldSimApi()->moveNPCTo(object_name, pose.to());
+
+        });
+
         pimpl_->server.bind("simPause", [&](bool is_paused) -> void {
             getWorldSimApi()->pause(is_paused);
         });

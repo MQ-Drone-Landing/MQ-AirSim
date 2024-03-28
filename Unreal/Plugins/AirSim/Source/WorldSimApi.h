@@ -27,6 +27,9 @@ public:
     virtual bool destroyObject(const std::string& object_name) override;
     virtual std::vector<std::string> listAssets() const override;
 
+    virtual bool setNPCSpeed(const std::string& object_name, float speed) override;
+    virtual bool moveNPCTo(const std::string& object_name, const Pose& pose) override;
+
     virtual bool isPaused() const override;
     virtual void reset() override;
     virtual void pause(bool is_paused) override;

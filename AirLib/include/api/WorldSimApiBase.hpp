@@ -56,6 +56,9 @@ namespace airlib
         virtual void printLogMessage(const std::string& message,
                                      const std::string& message_param = "", unsigned char severity = 0) = 0;
 
+        virtual bool setNPCSpeed(const std::string& object_name, float speed) = 0;
+        virtual bool moveNPCTo(const std::string& object_name, const Pose& pose) = 0;
+
         //----------- Plotting APIs ----------/
         virtual void simFlushPersistentMarkers() = 0;
         virtual void simPlotPoints(const vector<Vector3r>& points, const vector<float>& color_rgba, float size, float duration, bool is_persistent) = 0;

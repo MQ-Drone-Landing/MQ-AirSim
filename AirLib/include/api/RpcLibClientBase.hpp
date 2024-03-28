@@ -59,6 +59,9 @@ namespace airlib
         void simEnableWeather(bool enable);
         void simSetWeatherParameter(WorldSimApiBase::WeatherParameter param, float val);
 
+        bool simSetNPCSpeed(const std::string& object_name, float speed) const;
+        bool simMoveNPCTo(const std::string& object_name, const Pose& pose);
+
         vector<string> simListSceneObjects(const string& name_regex = string(".*")) const;
         Pose simGetObjectPose(const std::string& object_name) const;
         bool simLoadLevel(const string& level_name);
