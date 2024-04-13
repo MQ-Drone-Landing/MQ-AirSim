@@ -170,8 +170,13 @@ std::string WorldSimApi::spawnObject(const std::string& object_name, const std::
 
         AActor* NewActor;
         if (is_blueprint) {
-            UBlueprint* LoadObject = Cast<UBlueprint>(load_asset->GetAsset());
-            NewActor = this->createNewBPActor(new_actor_spawn_params, actor_transform, scale, LoadObject);
+            FString asset_path = load_asset->ObjectPath.ToString().Append(TEXT("_C"));
+            UE_LOG(LogTemp, Log, TEXT("Asset Path: %s"), *asset_path);
+            UClass* ActorClass = StaticLoadClass(AActor::StaticClass(), nullptr, *asset_path);
+            NewActor = simmode_->GetWorld()->SpawnActor<AActor>(ActorClass, FVector::ZeroVector, FRotator::ZeroRotator, new_actor_spawn_params);
+            if (NewActor) {
+                NewActor->SetActorLocationAndRotation(actor_transform.GetLocation(), actor_transform.GetRotation(), false, nullptr, ETeleportType::TeleportPhysics);
+            }
         }
         else {
             UStaticMesh* LoadObject = dynamic_cast<UStaticMesh*>(load_asset->GetAsset());
