@@ -146,9 +146,17 @@ public:
     ros::AsyncSpinner img_async_spinner_;
     ros::AsyncSpinner lidar_async_spinner_;
     ros::AsyncSpinner ground_truth_save_spinner_;
+    ros::AsyncSpinner depth_img_async_spinner_;
+    ros::AsyncSpinner update_command_async_spinner_;
+    ros::AsyncSpinner control_update_async_spinner_;
+    ros::AsyncSpinner imu_async_spinner_;
     bool is_used_lidar_timer_cb_queue_;
     bool is_used_img_timer_cb_queue_;
     bool is_used_ground_truth_save_queue_;
+    bool is_used_depth_img_timer_cb_queue_;
+    bool is_used_update_command_timer_cb_queue_;
+    bool is_used_control_update_timer_cb_queue_;
+    bool is_used_imu_timer_cb_queue_;
 
 private:
     struct SensorPublisher
@@ -222,10 +230,13 @@ private:
 
     /// ROS timer callbacks
     void img_response_timer_cb(const ros::TimerEvent& event); // update images from airsim_client_ every nth sec
-    void drone_state_timer_cb(const ros::WallTimerEvent& event); // update drone state from airsim_client_ every nth sec
+    void drone_state_timer_cb(const ros::TimerEvent& event); // update drone state from airsim_client_ every nth sec
     void lidar_timer_cb(const ros::TimerEvent& event);
     void ground_truth_save_timer_cb(const ros::TimerEvent& event); // save ground truth every nth sec
     void ground_truth_save();
+    void depth_img_response_timer_cb(const ros::TimerEvent& event); // update depth images from airsim_client_ every nth sec
+    void update_command_timer_cb(const ros::TimerEvent& event); // call update command to control vehicle
+    void get_and_publish_imu_timer_cb(const ros::TimerEvent& event); // publish imu data in individual thread
 
     /// ROS subscriber callbacks
     void vel_cmd_world_frame_cb(const airsim_ros_pkgs::VelCmd::ConstPtr& msg, const std::string& vehicle_name);
@@ -271,6 +282,7 @@ private:
     sensor_msgs::ImagePtr get_depth_img_msg_from_response(const ImageResponse& img_response, const ros::Time curr_ros_time, const std::string frame_id);
 
     void process_and_publish_img_response(const std::vector<ImageResponse>& img_response_vec, const int img_response_idx, const std::string& vehicle_name);
+    void process_and_publish_depth_img_response(const std::vector<ImageResponse>& img_response_vec, const int img_response_idx, const std::string& vehicle_name);
 
     // methods which parse setting json ang generate ros pubsubsrv
     void create_ros_pubs_from_settings_json();
@@ -346,14 +358,20 @@ private:
     // seperate busy connections to airsim, update in their own thread
     msr::airlib::RpcLibClientBase airsim_client_images_;
     msr::airlib::RpcLibClientBase airsim_client_lidar_;
+    msr::airlib::RpcLibClientBase airsim_client_imu_;
 
     // todo not sure if async spinners shuold be inside this class, or should be instantiated in airsim_node.cpp, and cb queues should be public
     // todo for multiple drones with multiple sensors, this won't scale. make it a part of VehicleROS?
     ros::CallbackQueue img_timer_cb_queue_;
     ros::CallbackQueue lidar_timer_cb_queue_;
     ros::CallbackQueue ground_truth_save_cb_queue_;
+    ros::CallbackQueue depth_img_timer_cb_queue_;
+    ros::CallbackQueue update_command_timer_cb_queue_;
+    ros::CallbackQueue control_update_timer_cb_queue_;
+    ros::CallbackQueue imu_timer_cb_queue_;
 
     std::mutex drone_control_mutex_;
+    // std::mutex drone_get_images_mutex_;
 
     // gimbal control
     bool has_gimbal_cmd_;
@@ -377,16 +395,26 @@ private:
 
     /// ROS Timers.
     ros::Timer airsim_img_response_timer_;
-    ros::WallTimer airsim_control_update_timer_;
+    ros::Timer airsim_control_update_timer_;
     ros::Timer airsim_lidar_update_timer_;
     ros::Timer airsim_ground_truth_save_timer_;
+    ros::Timer airsim_depth_img_response_timer_;
+    ros::Timer update_command_timer_;
+    ros::Timer imu_timer_;
 
     typedef std::pair<std::vector<ImageRequest>, std::string> airsim_img_request_vehicle_name_pair;
     std::vector<airsim_img_request_vehicle_name_pair> airsim_img_request_vehicle_name_pair_vec_;
     std::vector<image_transport::Publisher> image_pub_vec_;
+    // std::vector<ros::Publisher> image_pub_vec_;
     std::vector<ros::Publisher> cam_info_pub_vec_;
-
     std::vector<sensor_msgs::CameraInfo> camera_info_msg_vec_;
+
+    std::vector<airsim_img_request_vehicle_name_pair> airsim_depth_img_request_vehicle_name_pair_vec_;
+    std::vector<image_transport::Publisher> depth_image_pub_vec_;
+    // std::vector<ros::Publisher> depth_image_pub_vec_;
+    std::vector<ros::Publisher> depth_cam_info_pub_vec_;
+    std::vector<sensor_msgs::CameraInfo> depth_camera_info_msg_vec_;
+    std::vector<SensorPublisher> imu_pub_vec_;
 
     /// ROS other publishers
     ros::Publisher clock_pub_;
@@ -409,4 +437,6 @@ private:
     std::string ground_truth_path;
     // imu publish time interval
     std::chrono::system_clock::time_point imu_cur_time = std::chrono::high_resolution_clock::now();
+    // vehicle name for current vehicle
+    std::string current_vehicle_name;
 };

@@ -6,8 +6,6 @@
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 #include <string>
 #include <fstream>
-#include <vector>
-#include <algorithm> // For std::find
 
 constexpr char AirsimROSWrapper::CAM_YML_NAME[];
 constexpr char AirsimROSWrapper::WIDTH_YML_NAME[];
@@ -43,9 +41,9 @@ AirsimROSWrapper::AirsimROSWrapper(const ros::NodeHandle& nh, const ros::NodeHan
     , nh_(nh)
     , nh_private_(nh_private)
     , host_ip_(host_ip)
-    , airsim_settings_parser_(host_ip) // connects to port 41451 of host_ip by default
-    , airsim_client_images_(host_ip) // connects to port 41451 of host_ip by default
-    , airsim_client_lidar_(host_ip) // connects to port 41451 of host_ip by default
+    , airsim_settings_parser_(host_ip)
+    , airsim_client_images_(host_ip)
+    , airsim_client_lidar_(host_ip)
     , has_gimbal_cmd_(false)
     , tf_listener_(tf_buffer_)
 {
@@ -77,16 +75,12 @@ void AirsimROSWrapper::initialize_airsim()
             airsim_client_ = std::unique_ptr<msr::airlib::RpcLibClientBase>(new msr::airlib::CarRpcLibClient(host_ip_));
         }
         airsim_client_->confirmConnection();
-        ROS_INFO("Connected  to Airsim server!");
-
         airsim_client_images_.confirmConnection();
-        ROS_INFO("Connected _clien_images port");
         airsim_client_lidar_.confirmConnection();
-        ROS_INFO("Connected _client_lidar port");
 
         for (const auto& vehicle_name_ptr_pair : vehicle_name_ptr_map_) {
             airsim_client_->enableApiControl(true, vehicle_name_ptr_pair.first); // todo expose as rosservice?
-            // airsim_client_->armDisarm(true, vehicle_name_ptr_pair.first); // todo exposes as rosservice?
+            airsim_client_->armDisarm(true, vehicle_name_ptr_pair.first); // todo exposes as rosservice?
         }
 
         origin_geo_point_ = airsim_client_->getHomeGeoPoint("");
@@ -218,9 +212,6 @@ void AirsimROSWrapper::create_ros_pubs_from_settings_json()
         std::vector<ImageRequest> current_image_request_vec;
         current_image_request_vec.clear();
 
-        std::vector<ImageRequest> current_stereo_image_request_vec;
-        current_stereo_image_request_vec.clear();
-
         // iterate over camera map std::map<std::string, CameraSetting> .cameras;
         for (auto& curr_camera_elem : vehicle_setting->cameras) {
             auto& camera_setting = curr_camera_elem.second;
@@ -244,10 +235,7 @@ void AirsimROSWrapper::create_ros_pubs_from_settings_json()
                         curr_image_type == ImageType::Segmentation ||
                         curr_image_type == ImageType::SurfaceNormals ||
                         curr_image_type == ImageType::Infrared) {
-                        // if (curr_camera_name.find("left") == std::string::npos && curr_camera_name.find("right") == std::string::npos)
                         current_image_request_vec.push_back(ImageRequest(curr_camera_name, curr_image_type, false, false));
-                        // else
-                            // current_stereo_image_request_vec.push_back(ImageRequest(curr_camera_name, curr_image_type, false, false));
                     }
                     // if {DepthPlanar, DepthPerspective,DepthVis, DisparityNormalized}, get float image
                     else {
@@ -264,8 +252,6 @@ void AirsimROSWrapper::create_ros_pubs_from_settings_json()
             }
             // // push back pair (vector of image captures, current vehicle name)
             // airsim_img_request_vehicle_name_pair_vec_.push_back({ current_image_request_vec, curr_vehicle_name });
-            // airsim_img_request_vehicle_name_pair_vec_.push_back(std::make_pair(current_image_request_vec, curr_vehicle_name));
-
         }
 
         // push back pair (vector of image captures, current vehicle name)
@@ -369,7 +355,6 @@ void AirsimROSWrapper::create_ros_pubs_from_settings_json()
 
         airsim_img_response_timer_ = nh_private_.createTimer(timer_options);
         is_used_img_timer_cb_queue_ = true;
-        // std::cout << "create image callback" << std::endl;
     }
 
     // lidars update on their own callback/thread at a given rate
@@ -755,14 +740,6 @@ nav_msgs::Odometry AirsimROSWrapper::get_odom_msg_from_multirotor_state(const ms
     odom_msg.pose.pose.orientation.y = drone_state.getOrientation().y();
     odom_msg.pose.pose.orientation.z = drone_state.getOrientation().z();
     odom_msg.pose.pose.orientation.w = drone_state.getOrientation().w();
-    // std::cout  << odom_msg.pose.pose.position.x << " "
-    //         << odom_msg.pose.pose.position.y << " "
-    //         << odom_msg.pose.pose.position.z << " "
-    //         << odom_msg.pose.pose.orientation.x << " "
-    //         << odom_msg.pose.pose.orientation.y << " "
-    //         << odom_msg.pose.pose.orientation.z << " "
-    //         << odom_msg.pose.pose.orientation.w
-    //         << std::endl;
 
     odom_msg.twist.twist.linear.x = drone_state.kinematics_estimated.twist.linear.x();
     odom_msg.twist.twist.linear.y = drone_state.kinematics_estimated.twist.linear.y();
@@ -949,19 +926,6 @@ void AirsimROSWrapper::publish_odom_tf(const nav_msgs::Odometry& odom_msg)
 {
     geometry_msgs::TransformStamped odom_tf;
     odom_tf.header = odom_msg.header;
-    // Get the current time
-    ros::Time now = ros::Time::now();
-
-    // Generate a random number of nanoseconds up to 10,000,000 (0.01 second)
-    int random_nanoseconds = rand() % 10000000; // [0, 9999999]
-
-    // Create a duration from the random number of nanoseconds
-    ros::Duration random_duration(0, random_nanoseconds);
-
-    // Add the random duration to the current time
-    ros::Time new_time = now + random_duration;
-    odom_tf.header.stamp = new_time;
-
     odom_tf.child_frame_id = odom_msg.child_frame_id;
     odom_tf.transform.translation.x = odom_msg.pose.pose.position.x;
     odom_tf.transform.translation.y = odom_msg.pose.pose.position.y;
@@ -1066,7 +1030,7 @@ void AirsimROSWrapper::drone_state_timer_cb(const ros::WallTimerEvent& event)
         origin_geo_point_pub_.publish(origin_geo_point_msg_);
 
         // get the basic vehicle pose and environmental state
-        ros::Time now = update_state(); // updated to not be const
+        const auto now = update_state();
 
         // on init, will publish 0 to /clock as expected for use_sim_time compatibility
         if (!airsim_client_->simIsPaused()) {
@@ -1075,7 +1039,6 @@ void AirsimROSWrapper::drone_state_timer_cb(const ros::WallTimerEvent& event)
         }
         // publish the simulation clock
         if (publish_clock_) {
-            // ROS_DEBUG("publishing clock %f", ros_clock_.clock.toSec());
             clock_pub_.publish(ros_clock_);
         }
 
@@ -1175,10 +1138,8 @@ ros::Time AirsimROSWrapper::update_state()
 void AirsimROSWrapper::publish_vehicle_state()
 {   
     // std::string temp_path;
-    // int i = 0;
+
     for (auto& vehicle_name_ptr_pair : vehicle_name_ptr_map_) {
-        // std::cout << "vehicle: " << i << std::endl;
-        // i++;
         auto& vehicle_ros = vehicle_name_ptr_pair.second;
 
         // simulation environment truth
@@ -1201,7 +1162,7 @@ void AirsimROSWrapper::publish_vehicle_state()
         // fout.precision(0);
         // fout << vehicle_ros->curr_odom.header.stamp.toSec() * 1e9 << " ";
         // fout.precision(5);
-        // std::cout  << vehicle_ros->curr_odom.pose.pose.position.x << " "
+        // fout  << vehicle_ros->curr_odom.pose.pose.position.x << " "
         //         << vehicle_ros->curr_odom.pose.pose.position.y << " "
         //         << vehicle_ros->curr_odom.pose.pose.position.z << " "
         //         << vehicle_ros->curr_odom.pose.pose.orientation.x << " "
@@ -1209,9 +1170,10 @@ void AirsimROSWrapper::publish_vehicle_state()
         //         << vehicle_ros->curr_odom.pose.pose.orientation.z << " "
         //         << vehicle_ros->curr_odom.pose.pose.orientation.w
         //         << std::endl;
+        // fout.close();
         // double duration = DT_MS(imu_cur_time);
         // std::cout << "save duration: " << duration << std::endl;
-        // std::cout << vehicle_ros->curr_odom.header.stamp << " " << std::endl;
+
         publish_odom_tf(vehicle_ros->curr_odom);
 
         // ground truth GPS position from sim/HITL
@@ -1456,7 +1418,7 @@ void AirsimROSWrapper::img_response_timer_cb(const ros::TimerEvent& event)
         int image_response_idx = 0;
         for (const auto& airsim_img_request_vehicle_name_pair : airsim_img_request_vehicle_name_pair_vec_) {
             const std::vector<ImageResponse>& img_response = airsim_client_images_.simGetImages(airsim_img_request_vehicle_name_pair.first, airsim_img_request_vehicle_name_pair.second);
-            // std::cout << "get image response" << std::endl;
+
             if (img_response.size() == airsim_img_request_vehicle_name_pair.first.size()) {
                 process_and_publish_img_response(img_response, image_response_idx, airsim_img_request_vehicle_name_pair.second);
                 image_response_idx += img_response.size();
@@ -1546,13 +1508,7 @@ sensor_msgs::CameraInfo AirsimROSWrapper::generate_cam_info(const std::string& c
     // todo focal length in Y direction should be same as X it seems. this can change in future a scene capture component which exactly correponds to a cine camera
     // float f_y = (capture_setting.height / 2.0) / tan(math_common::deg2rad(fov_degrees / 2.0));
     cam_info_msg.K = { f_x, 0.0, capture_setting.width / 2.0, 0.0, f_x, capture_setting.height / 2.0, 0.0, 0.0, 1.0 };
-    std::string stereo_cam = "rightcamera_1";
-    if (camera_name != stereo_cam)
-        cam_info_msg.P = { f_x, 0.0, capture_setting.width / 2.0, 0.0, 0.0, f_x, capture_setting.height / 2.0, 0.0, 0.0, 0.0, 1.0, 0.0 };
-    else
-        cam_info_msg.P = { f_x, 0.0, capture_setting.width / 2.0, -32.0, 0.0, f_x, capture_setting.height / 2.0, 0.0, 0.0, 0.0, 1.0, 0.0 };
-
-    // cam_info_msg.R = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
+    cam_info_msg.P = { f_x, 0.0, capture_setting.width / 2.0, 0.0, 0.0, f_x, capture_setting.height / 2.0, 0.0, 0.0, 0.0, 1.0, 0.0 };
     return cam_info_msg;
 }
 
@@ -1561,25 +1517,12 @@ void AirsimROSWrapper::process_and_publish_img_response(const std::vector<ImageR
     // todo add option to use airsim time (image_response.TTimePoint) like Gazebo /use_sim_time param
     ros::Time curr_ros_time = ros::Time::now();
     int img_response_idx_internal = img_response_idx;
-    std::vector<std::string> publishedCamera;
 
-    // std::cout << "publish images" << std::endl;
     for (const auto& curr_img_response : img_response_vec) {
         // todo publishing a tf for each capture type seems stupid. but it foolproofs us against render thread's async stuff, I hope.
         // Ideally, we should loop over cameras and then captures, and publish only one tf.
-        // std::cout << "publish camera info" << std::endl;
-        // std::cout << curr_img_response.camera_name << std::endl;
-        // try{
-        if (std::find(publishedCamera.begin(), publishedCamera.end(), curr_img_response.camera_name) == publishedCamera.end()) 
-        {
-            publish_camera_tf(curr_img_response, curr_ros_time, vehicle_name, curr_img_response.camera_name);
-            publishedCamera.push_back(curr_img_response.camera_name);
-        }
-        //     throw std::runtime_error("A runtime error occurred");
-        // }
-        // catch (const std::runtime_error& e) {
-        //     std::cout << "Caught a runtime_error: " << e.what() << std::endl;
-        // }
+        publish_camera_tf(curr_img_response, curr_ros_time, vehicle_name, curr_img_response.camera_name);
+
         // todo simGetCameraInfo is wrong + also it's only for image type -1.
         // msr::airlib::CameraInfo camera_info = airsim_client_.simGetCameraInfo(curr_img_response.camera_name);
 
@@ -1587,7 +1530,6 @@ void AirsimROSWrapper::process_and_publish_img_response(const std::vector<ImageR
 
         camera_info_msg_vec_[img_response_idx_internal].header.stamp = airsim_timestamp_to_ros(curr_img_response.time_stamp);
         cam_info_pub_vec_[img_response_idx_internal].publish(camera_info_msg_vec_[img_response_idx_internal]);
-        // std::cout << "publish image" << std::endl;
 
         // DepthPlanar / DepthPerspective / DepthVis / DisparityNormalized
         if (curr_img_response.pixels_as_float) {
@@ -1621,7 +1563,7 @@ void AirsimROSWrapper::publish_camera_tf(const ImageResponse& img_response, cons
     cam_tf_body_msg.transform.rotation.y = img_response.camera_orientation.y();
     cam_tf_body_msg.transform.rotation.z = img_response.camera_orientation.z();
     cam_tf_body_msg.transform.rotation.w = img_response.camera_orientation.w();
-    // std::cout << "create body msg" << std::endl;
+
     if (isENU_) {
         std::swap(cam_tf_body_msg.transform.translation.x, cam_tf_body_msg.transform.translation.y);
         std::swap(cam_tf_body_msg.transform.rotation.x, cam_tf_body_msg.transform.rotation.y);
@@ -1636,7 +1578,6 @@ void AirsimROSWrapper::publish_camera_tf(const ImageResponse& img_response, cons
     cam_tf_optical_msg.transform.translation.x = cam_tf_body_msg.transform.translation.x;
     cam_tf_optical_msg.transform.translation.y = cam_tf_body_msg.transform.translation.y;
     cam_tf_optical_msg.transform.translation.z = cam_tf_body_msg.transform.translation.z;
-    // std::cout << "create tf optical msg" << std::endl;
 
     tf2::Quaternion quat_cam_body;
     tf2::Quaternion quat_cam_optical;
@@ -1649,7 +1590,6 @@ void AirsimROSWrapper::publish_camera_tf(const ImageResponse& img_response, cons
     mat_cam_optical.getRotation(quat_cam_optical);
     quat_cam_optical.normalize();
     tf2::convert(quat_cam_optical, cam_tf_optical_msg.transform.rotation);
-    // std::cout << "send transform" << std::endl;
 
     tf_broadcaster_.sendTransform(cam_tf_body_msg);
     tf_broadcaster_.sendTransform(cam_tf_optical_msg);

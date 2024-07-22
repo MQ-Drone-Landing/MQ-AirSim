@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #capture joystick events using ROS and convert to AirSim Car API commands
 #to enable:
