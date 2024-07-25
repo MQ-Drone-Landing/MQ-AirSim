@@ -3,8 +3,8 @@ project(airsim_ros_pkgs)
 
 # set this to path to AirSim root folder if you want your catkin workspace in a custom directory
 #otherwise this will find the AirSim package in the default install location
-find_package(catkin REQUIRED simulation_dependencies )
-set(AIRSIM_ROOT "${simulation_dependencies_INCLUDE_DIRS}/AirSim")
+find_package(catkin REQUIRED mq_simulation_dependencies )
+set(AIRSIM_ROOT "${mq_simulation_dependencies_INCLUDE_DIRS}/AirSim")
 message(STATUS "found AIRSIM_ROOT=${AIRSIM_ROOT}")
 
 
