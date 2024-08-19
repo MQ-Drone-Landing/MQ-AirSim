@@ -1,8 +1,7 @@
 <launch>
-    <rosparam param="use_sim_time">true</rosparam>
 
 	<arg name="output" default="screen"/>
-	<arg name="publish_clock" default="true"/>
+	<arg name="publish_clock" default="false"/>
 	<arg name="is_vulkan" default="true"/>
 	<arg name="host_ip" default="127.0.0.1" />
 
