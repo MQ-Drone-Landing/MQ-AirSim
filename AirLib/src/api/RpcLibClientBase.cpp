@@ -176,6 +176,11 @@ __pragma(warning(disable : 4239))
 
         }
 
+        float RpcLibClientBase::simGetGroundHeight(float X, float Y)
+        {
+            return pimpl_->client.call("simGetGroundHeight", X, Y).as<bool>();
+        }
+
         bool RpcLibClientBase::armDisarm(bool arm, const std::string& vehicle_name)
         {
             return pimpl_->client.call("armDisarm", arm, vehicle_name).as<bool>();

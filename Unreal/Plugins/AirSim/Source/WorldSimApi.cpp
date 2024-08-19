@@ -18,6 +18,7 @@
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "AIController.h"
 #include "NavigationSystem.h"
+#include "Kismet/GameplayStatics.h"
 
 WorldSimApi::WorldSimApi(ASimModeBase* simmode)
     : simmode_(simmode) {}
@@ -43,6 +44,35 @@ bool WorldSimApi::loadLevel(const std::string& level_name)
     this->simmode_->toggleLoadingScreen(false);
 
     return success;
+}
+
+float WorldSimApi::getGroundHeight(float X, float Y)
+{
+    UWorld* World = this->simmode_->GetWorld();
+    float MaxHeight = 1000.0f; // Adjust this value based on your game
+    float ScaleFactor = 100.0f;
+    FVector Start(X * ScaleFactor, Y * ScaleFactor, MaxHeight * ScaleFactor);
+    FVector End(X * ScaleFactor, Y * ScaleFactor, -MaxHeight * ScaleFactor);
+
+    FHitResult HitResult;
+    FCollisionObjectQueryParams ObjectQueryParams(FCollisionObjectQueryParams::AllStaticObjects);
+    
+    bool bHit = World->LineTraceSingleByObjectType(
+        HitResult,
+        Start,
+        End,
+        ObjectQueryParams
+    );
+
+    if (bHit)
+    {
+        return -HitResult.Location.Z / ScaleFactor;
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No ground detected at (%f, %f)"), X, Y);
+        return -999.0f;
+    }
 }
 
 bool WorldSimApi::moveNPCTo(const std::string& object_name, const WorldSimApi::Pose& pose)

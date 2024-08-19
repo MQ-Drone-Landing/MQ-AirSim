@@ -61,6 +61,7 @@ namespace airlib
 
         bool simSetNPCSpeed(const std::string& object_name, float speed) const;
         bool simMoveNPCTo(const std::string& object_name, const Pose& pose);
+        float simGetGroundHeight(float X, float Y);
 
         vector<string> simListSceneObjects(const string& name_regex = string(".*")) const;
         Pose simGetObjectPose(const std::string& object_name) const;

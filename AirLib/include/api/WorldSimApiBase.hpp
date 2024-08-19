@@ -58,6 +58,8 @@ namespace airlib
 
         virtual bool setNPCSpeed(const std::string& object_name, float speed) = 0;
         virtual bool moveNPCTo(const std::string& object_name, const Pose& pose) = 0;
+        virtual float getGroundHeight(float X, float Y) = 0;
+
 
         //----------- Plotting APIs ----------/
         virtual void simFlushPersistentMarkers() = 0;

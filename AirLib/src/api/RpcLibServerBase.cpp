@@ -108,7 +108,10 @@ namespace airlib
             return getWorldSimApi()->moveNPCTo(object_name, pose.to());
 
         });
+        pimpl_->server.bind("simGetGroundHeight", [&](float X, float Y) -> float {
+            return getWorldSimApi()->getGroundHeight(X, Y);
 
+        });
         pimpl_->server.bind("simPause", [&](bool is_paused) -> void {
             getWorldSimApi()->pause(is_paused);
         });

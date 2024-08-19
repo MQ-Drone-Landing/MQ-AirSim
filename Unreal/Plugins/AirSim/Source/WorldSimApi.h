@@ -29,6 +29,8 @@ public:
 
     virtual bool setNPCSpeed(const std::string& object_name, float speed) override;
     virtual bool moveNPCTo(const std::string& object_name, const Pose& pose) override;
+    virtual float getGroundHeight(float X, float Y) override;
+
 
     virtual bool isPaused() const override;
     virtual void reset() override;

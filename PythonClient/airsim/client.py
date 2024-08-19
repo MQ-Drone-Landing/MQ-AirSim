@@ -163,6 +163,10 @@ class VehicleClient:
     
     def simMoveNPCTo(self, obj_name, pose):
         return self.client.call("simMoveNPCTo", obj_name,  pose)
+    
+    def simGetGroundHeight(self, x, y):
+        height = self.client.call("simGetGroundHeight", x, y)
+        return height
 
     def simSetLightIntensity(self, light_name, intensity):
         """
@@ -571,7 +575,8 @@ class VehicleClient:
         Returns:
             bool: True if the level was successfully loaded
         """
-        return self.client.call('simLoadLevel', level_name)
+        return  self.client.call('simLoadLevel', level_name)
+
 
     def simListAssets(self):
         """
