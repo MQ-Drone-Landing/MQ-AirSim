@@ -1,14 +1,16 @@
-from scenario_generation.components.base_component import BaseComponent 
-import airsim
-from scenario_generation.components.utils import pose_to_vec, pose_to_dict, pose_from_dict, pose_from_vec
+from .base_component import BaseComponent 
+from ...types import *
+from .utils import pose_to_vec, pose_to_dict, pose_from_dict, pose_from_vec
+from .config import ACTOR_TYPE
 import random
 
 class Marker(BaseComponent):
-    def __init__(self, id, material, pose:airsim.Pose, name='marker_comp'):
+    def __init__(self, id, material, pose:Pose, name='marker_comp'):
         super().__init__(name)
         self.id = id
         self.material = material
         self.pose = pose
+        self.type = ACTOR_TYPE['marker']
 
     def to_vec(self):
         return [self.id, self.material] + pose_to_vec(self.pose)

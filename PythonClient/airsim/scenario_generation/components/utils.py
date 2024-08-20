@@ -1,4 +1,5 @@
-import airsim
+from ...utils import *
+from ...types import *
 import random
 
 def pose_to_vec(pose):
@@ -21,14 +22,14 @@ def pose_to_dict(pose):
     }
 
 def pose_from_dict(data):
-    position = airsim.Vector3r(data['position']['x_val'], data['position']['y_val'], data['position']['z_val'])
-    orientation = airsim.Quaternionr(data['orientation']['x_val'], data['orientation']['y_val'], data['orientation']['z_val'], data['orientation']['w_val'])
-    return airsim.Pose(position, orientation)
+    position = Vector3r(data['position']['x_val'], data['position']['y_val'], data['position']['z_val'])
+    orientation = Quaternionr(data['orientation']['x_val'], data['orientation']['y_val'], data['orientation']['z_val'], data['orientation']['w_val'])
+    return Pose(position, orientation)
 
 def pose_from_vec(data):
-    position = airsim.Vector3r(data[0], data[1], data[2])
-    orientation = airsim.Quaternionr(data[3], data[4], data[5], data[6])
-    return airsim.Pose(position, orientation)
+    position = Vector3r(data[0], data[1], data[2])
+    orientation = Quaternionr(data[3], data[4], data[5], data[6])
+    return Pose(position, orientation)
 
 def mutate_pose(pose, mutation_rate=0.3):
     flag = random.random()

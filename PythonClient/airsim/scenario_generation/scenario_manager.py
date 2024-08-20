@@ -1,5 +1,8 @@
 # import rospy
-import airsim
+from ..client import MultirotorClient
+from ..types import *
+from ..utils import *
+from .components.config import ACTOR_TYPE, BP_TYPE
 import random
 import numpy as np
 from pyquaternion import Quaternion
@@ -17,13 +20,13 @@ class ScenarioManager():
 
     Attributes:
         sim_mode (str): Simulation mode.
-        client (airsim.MultirotorClient or airsim.VehicleClient): AirSim API client.
+        client (MultirotorClient or VehicleClient): AirSim API client.
         current_scenario (None): Current scenario.
         scenario_objects (list): Dynamic scenario objects in the current scenario.
 
     """
 
-    def __init__(self, sim_mode='drone', host_ip='localhost') -> None:
+    def __init__(self, client, sim_mode='drone') -> None:
         """
         Initializes the ScenarioManager object.
 
@@ -32,18 +35,19 @@ class ScenarioManager():
             host_ip (str): IP address of the host machine.
 
         """
+        self.client = client
         self.sim_mode = sim_mode
+
         if sim_mode == 'cv':
-            self.client = airsim.VehicleClient(host_ip)
+
             # set downward camera
-            self.client.simSetCameraPose('0', airsim.Pose(airsim.Vector3r(0, 0, 0),
-                                         airsim.to_quaternion(math.radians(-90), 0, 0)))
-        else:
-            self.client = airsim.MultirotorClient(host_ip)
+            self.client.simSetCameraPose('0', Pose(Vector3r(0, 0, 0),
+                                         to_quaternion(math.radians(-90), 0, 0)))
+
 
         self.client.simEnableWeather(True)
         self.current_scenario = None
-        self.scenario_objects = []
+        self.scenario_objects = {}
 
     def get_objects_pool(self, scenario):
         """
@@ -78,7 +82,7 @@ class ScenarioManager():
             marker_name (str): The name of the marker object.
 
         Returns:
-            airsim.Pose: The pose of the marker object.
+            Pose: The pose of the marker object.
 
         """
 
@@ -98,16 +102,16 @@ class ScenarioManager():
             params (list): List of weather parameters.
 
         """
-        self.client.simSetWeatherParameter(airsim.WeatherParameter.Rain, min(1, params[0]))
-        self.client.simSetWeatherParameter(airsim.WeatherParameter.Roadwetness, min(1, params[1]))
-        self.client.simSetWeatherParameter(airsim.WeatherParameter.Snow, min(1, params[2]))
-        self.client.simSetWeatherParameter(airsim.WeatherParameter.RoadSnow, min(1, params[3]))
-        self.client.simSetWeatherParameter(airsim.WeatherParameter.MapleLeaf, min(1, params[4]))
-        self.client.simSetWeatherParameter(airsim.WeatherParameter.RoadLeaf, min(1, params[5]))
-        self.client.simSetWeatherParameter(airsim.WeatherParameter.Dust, min(1, params[6]))
-        self.client.simSetWeatherParameter(airsim.WeatherParameter.Fog, min(1, params[7])) 
+        self.client.simSetWeatherParameter(WeatherParameter.Rain, min(1, params[0]))
+        self.client.simSetWeatherParameter(WeatherParameter.Roadwetness, min(1, params[1]))
+        self.client.simSetWeatherParameter(WeatherParameter.Snow, min(1, params[2]))
+        self.client.simSetWeatherParameter(WeatherParameter.RoadSnow, min(1, params[3]))
+        self.client.simSetWeatherParameter(WeatherParameter.MapleLeaf, min(1, params[4]))
+        self.client.simSetWeatherParameter(WeatherParameter.RoadLeaf, min(1, params[5]))
+        self.client.simSetWeatherParameter(WeatherParameter.Dust, min(1, params[6]))
+        self.client.simSetWeatherParameter(WeatherParameter.Fog, min(1, params[7])) 
         if self.sim_mode != 'cv':    
-            wind = airsim.Vector3r(min(5, params[8]*5), min(5, params[8]*5), 0)
+            wind = Vector3r(min(5, params[8]*5), min(5, params[8]*5), 0)
             self.client.simSetWind(wind)
 
     def reset_npc(self, npc_name):
@@ -129,16 +133,14 @@ class ScenarioManager():
         Reset the environment by resetting the dynamic objects and markers.
 
         """
-        for i, obj in enumerate(self.scenario_objects):
-            self.reset_npc(obj)
-            time.sleep(1)
+        for actors in (self.scenario_objects).values():
+            # self.reset_npc(obj)
+            for actor_name in actors.keys():
+                self.client.simDestroyObject(actor_name)
+                time.sleep(0.1)
 
-        self.scenario_objects = []
-        markers = ['cube_marker{}'.format(i) for i in range(3)]
+        self.scenario_objects = {}
 
-        for i, marker in enumerate(markers):
-            self.client.simSetObjectPose(marker, airsim.Pose(airsim.Vector3r(100, 100 + 5 * i, 0.5),
-             airsim.Quaternionr(w_val=1, x_val=0, y_val=0, z_val=0)))
 
     def get_current_scene(self, camera_name='0', image_type=0, image_encoding='rgb'):
         """
@@ -151,20 +153,20 @@ class ScenarioManager():
 
         Returns:
             numpy.ndarray: The image array.
-            airsim.Pose: The pose of the camera.
+            Pose: The pose of the camera.
 
         """
         if image_type == 0:
-            responses = self.client.simGetImages([airsim.ImageRequest(camera_name, image_type, False, False)])
+            responses = self.client.simGetImages([ImageRequest(camera_name, image_type, False, False)])
         elif image_type == 5:
-            responses = self.client.simGetImages([airsim.ImageRequest(camera_name, image_type, False, False)])
+            responses = self.client.simGetImages([ImageRequest(camera_name, image_type, False, False)])
 
         response = responses[0]
         img1d = np.fromstring(response.image_data_uint8, dtype=np.uint8) 
         img = img1d.reshape(response.height, response.width, 3)
         if image_encoding == 'bgr' and image_type == 0:
             img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        camera_body_pose = airsim.Pose(response.camera_position, response.camera_orientation)
+        camera_body_pose = Pose(response.camera_position, response.camera_orientation)
         
         return img, camera_body_pose
 
@@ -177,7 +179,7 @@ class ScenarioManager():
 
         """
         colors = {}
-        requests = airsim.ImageRequest("0", airsim.ImageType.Segmentation, False, False)
+        requests = ImageRequest("0", ImageType.Segmentation, False, False)
 
         for cls_id in range(20):
             self.client.simSetSegmentationObjectID(".*", cls_id, is_name_regex=True)
@@ -223,7 +225,7 @@ class ScenarioManager():
         npcs = self.client.simListSceneObjects('npc*')
         return npcs
 
-    def add_npc(self, npc_type, scenario_pose):
+    def add_actor(self, actor):
         """
         Add an NPC (non-player character) to the scene.
 
@@ -232,19 +234,31 @@ class ScenarioManager():
             scenario_pose: The pose of the scenario.
 
         """
-        for obj_name, obj_status in self.dynamic_objects_pool[npc_type].items():
-            if not obj_status['occupied']:
-                pose = airsim.Pose(airsim.Vector3r(scenario_pose.x, scenario_pose.y, -scenario_pose.z))
-                success = self.client.simSetObjectPose(obj_name, pose)
-                if success:
-                    print('add actor {} at ({}, {}, {}) successfully'.format(obj_name, scenario_pose.x,
-                            scenario_pose.y, scenario_pose.z))
-                    self.scenario_objects.append(obj_name)
-                    obj_status['occupied'] = True
-                    break
-                else:
-                    print('failed to add actor {} at ({}, {}, {})'.format(obj_name, scenario_pose.x,
-                            scenario_pose.y, scenario_pose.z))
+        if actor.type != ACTOR_TYPE['marker']:
+            npc_name = self.client.simSpawnObject(actor.name, BP_TYPE[actor.type], actor.start_pose, Vector3r(1, 1, 1), True, True)
+        else:
+            npc_name = self.client.simSpawnObject(actor.name, BP_TYPE[actor.type]+str(actor.id), actor.pose,
+                                                        Vector3r(1, 1, 1), False, True)
+        
+        # scenario objects[actor_type][actor_name]
+        if BP_TYPE[actor.type] not in self.scenario_objects:
+            self.scenario_objects[BP_TYPE[actor.type]] = {}
+        self.scenario_objects[BP_TYPE[actor.type]][npc_name] = actor
+
+
+        # for obj_name, obj_status in self.dynamic_objects_pool[npc_type].items():
+        #     if not obj_status['occupied']:
+        #         pose = Pose(Vector3r(scenario_pose.x, scenario_pose.y, -scenario_pose.z))
+        #         success = self.client.simSetObjectPose(obj_name, pose)
+        #         if success:
+        #             print('add actor {} at ({}, {}, {}) successfully'.format(obj_name, scenario_pose.x,
+        #                     scenario_pose.y, scenario_pose.z))
+        #             self.scenario_objects.append(obj_name)
+        #             obj_status['occupied'] = True
+        #             break
+        #         else:
+        #             print('failed to add actor {} at ({}, {}, {})'.format(obj_name, scenario_pose.x,
+        #                     scenario_pose.y, scenario_pose.z))
         #     return False, None
         # return obj_name
     
@@ -263,9 +277,9 @@ class ScenarioManager():
 
     def set_npc_pose(self, npc_name, pose):
         # q1 = Quaternion(axis=[0., 0., 1.], angle=scenario_pose.angle)
-        # orientation = airsim.Quaternionr(w_val=q1.elements[0], x_val=q1.elements[1], y_val=q1.elements[2], z_val=q1.elements[3])
+        # orientation = Quaternionr(w_val=q1.elements[0], x_val=q1.elements[1], y_val=q1.elements[2], z_val=q1.elements[3])
 
-        # pose = airsim.Pose(airsim.Vector3r(scenario_pose.x, scenario_pose.y, -scenario_pose.z), orientation)
+        # pose = Pose(Vector3r(scenario_pose.x, scenario_pose.y, -scenario_pose.z), orientation)
         self.client.simSetObjectPose(npc_name, pose)
 
 
@@ -278,8 +292,8 @@ class ScenarioManager():
     def move_npc_to(self, npc_name, pose, speed=0.5):
 
         # q1 = Quaternion(axis=[0., 0., 1.], angle=angle)
-        # orientation = airsim.Quaternionr(w_val=q1.elements[0], x_val=q1.elements[1], y_val=q1.elements[2], z_val=q1.elements[3])
-        # pose = airsim.Pose(airsim.Vector3r(scenario_pose.x, scenario_pose.y, -scenario_pose.z), orientation)  
+        # orientation = Quaternionr(w_val=q1.elements[0], x_val=q1.elements[1], y_val=q1.elements[2], z_val=q1.elements[3])
+        # pose = Pose(Vector3r(scenario_pose.x, scenario_pose.y, -scenario_pose.z), orientation)  
         curernt_pose = self.get_pose(npc_name)
 
         print("set npc speed: ", speed)
@@ -315,19 +329,19 @@ class ScenarioManager():
         pose = self.get_pose('cube_marker{}'.format(scenario.tp_marker.id))
         all_marker_pos.append((pose.position.x_val, pose.position.y_val))
         # set fp_markers
-        while len(all_marker_pos) < len(scenario.fp_markers) + 1:
-            while True:
-                fp_marker = scenario.fp_markers[len(all_marker_pos)]
-                self.set_marker(fp_marker.pose, marker_name='cube_marker{}'.format(fp_marker.id))
-                time.sleep(3)
-                marker_pose = self.get_pose('cube_marker{}'.format(fp_marker.id))
-                pos = (marker_pose.position.x_val, marker_pose.position.y_val)
-                if abs(marker_pose.position.z_val) > 1:
-                    fp_marker.mutate() 
-                elif all(distance_2d(pos, marker_pos) > 2 for marker_pos in all_marker_pos):
-                    pose = self.get_pose('cube_marker{}'.format(fp_marker.id))
-                    all_marker_pos.append(pos)
-                    break
+        # while len(all_marker_pos) < len(scenario.fp_markers) + 1:
+        #     while True:
+        #         fp_marker = scenario.fp_markers[len(all_marker_pos)]
+        #         self.set_marker(fp_marker.pose, marker_name='cube_marker{}'.format(fp_marker.id))
+        #         time.sleep(3)
+        #         marker_pose = self.get_pose('cube_marker{}'.format(fp_marker.id))
+        #         pos = (marker_pose.position.x_val, marker_pose.position.y_val)
+        #         if abs(marker_pose.position.z_val) > 1:
+        #             fp_marker.mutate() 
+        #         elif all(distance_2d(pos, marker_pos) > 2 for marker_pos in all_marker_pos):
+        #             pose = self.get_pose('cube_marker{}'.format(fp_marker.id))
+        #             all_marker_pos.append(pos)
+        #             break
         
         return scenario
 
@@ -340,82 +354,41 @@ class ScenarioManager():
     def load_scenario(self):
         scenario = self.current_scenario
 
-        # set drone pose for cv and simple flight mode
-        # if self.sim_mode != 'ardupilot':
-        #     if self.sim_mode == 'cv':
-        #         self.set_drone_pose(scenario.drone_start_pose)
-        #     else:
-        #         self.set_drone_pose(scenario.drone_start_pose)
-        # create the landing scenario from the scenario configuration
+        self.set_drone_pose(scenario.drone_start_pose)
+
         self.reset_env()
         time.sleep(1)
-        self.set_marker(scenario.tp_marker.pose, marker_name='cube_marker{}'.format(scenario.tp_marker.id))
-        # time.sleep(3)
-        print('set marker at: ', self.get_pose('cube_marker{}'.format(scenario.tp_marker.id)))
-        for marker in scenario.fp_markers:
-            self.set_marker(marker.pose, marker_name='cube_marker{}'.format(marker.id))
-        
 
+        self.add_actor(scenario.tp_marker)
+        # self.set_marker(scenario.tp_marker.pose, marker_name='cube_marker{}'.format(scenario.tp_marker.id))
+        # time.sleep(3)
+        # print('set marker at: ', self.get_pose('cube_marker{}'.format(scenario.tp_marker.id)))
+        for marker in scenario.fp_markers:
+            self.add_actor(marker)
         
         # set weather and time
         self.set_weather(scenario.weather.to_vec())
         self.set_time_of_day(scenario.time.to_vec())
 
         # set dynamic actors
-
         for actor in scenario.actors:
-            # print('{} init ({} {} {})'.format(actor.type, actor.start_pose.x, actor.start_pose.y, -actor.start_pose.z))
-            # if abs(actor.start_pose.x - 1) < 1 and abs(actor.start_pose.y - 1) < 1:
-            #     actor.start_pose.x += random.uniform(3, 5)
-            #     actor.start_pose.y += random.uniform(3, 5)
-            self.add_npc(self.map_config["actor_type"][actor.type], actor.start_pose)
-            # if not success:
-            #     actor.type = -1
+            self.add_actor(actor)
 
         
     # if the actors are not static, move them to the destination
     def run_scenario(self):
-        scenario = self.current_scenario
-        # print('11111111111111111111',self.dynamic_objects)
         if len(self.scenario_objects) != 0:
-            for i, actor in enumerate(scenario.actors):
-                if actor.type == -1:
-                    continue
-                # print(actor.end_pose)
-                # print('actor', i)
-                try:
-                    print('move actor {}'.format(self.scenario_objects[i]))
-                    self.move_npc_to(self.scenario_objects[i], actor.end_pose, actor.speed)
-                except:
-                    pass
-
-
-if __name__ == "__main__":
-    # env = AirSimEnv('cv', '10.6.37.180')
-    try:
-        env = AirSimEnv('cv', '10.6.37.180')
-    except:
-        env = AirSimEnv('cv', '127.0.0.1')
-    env.add_npc('npc_person_1', Pose(0, 10, 0))
-    # env.reset_env()
-    # time.sleep(3)
-    # status, npc_name = env.add_npc('person_2', 2, 2, 1)
-    # time.sleep(5)
-    # env.get_pose('npc_vehicle_2')
-    # env.client.simSetNPCVehicleThrottle('npc_vehicle_2', throttle=-0.5)
-    # env.client.simSetNPCVehicleSteering('npc_vehicle_2', steering=0.5)
-    # time.sleep(1)
-    # env.client.simSetNPCVehicleThrottle('npc_vehicle_2', throttle=0)
-
-    # env.npc_move_to('npc_vehicle_2', -1.89, 30, speed=300)
-    # time.sleep(1)
-    # env.set_marker(4, 2)
-    # status, npc_name = env.add_npc('person_2', 0, 0, 1)
-    # time.sleep(5)
-    # env.get_npc_pose(npc_name)
-
-    # if status:
-    #     env.npc_move_to(npc_name, 10, 10, speed=300)
-    # env.get_npc_pose('npc_deer_0')
-    # env.set_npc('npc_person_1', 0, 0, -1)
-    # env.set_time_of_day([0.2, 0.8])
+            for actors in self.scenario_objects.values():
+                for actor_name in actors:
+                    if actors[actor_name].type in [ACTOR_TYPE['person'], ACTOR_TYPE['bird']]:
+                        self.move_npc_to(actor_name, actors[actor_name].end_pose, actors[actor_name].speed)
+            # for i, actor in enumerate(scenario.actors):
+            #     if actor.type not in [ACTOR_TYPE['person'], ACTOR_TYPE['bird']]:
+            #         continue
+            #     # print(actor.end_pose)
+            #     # print('actor', i)
+            #     try:
+            #         print('move actor {}'.format(self.scenario_objects[i][1]))
+            #         self.move_npc_to(self.scenario_objects[i], actor.end_pose, actor.speed)
+            #     except:
+            #         pass

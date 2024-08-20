@@ -1,19 +1,19 @@
 import json
 import random
-from scenario_generation.components.actor import Actor
-from scenario_generation.components.weather import Weather
-from scenario_generation.components.time import Time
-from scenario_generation.components.marker import Marker
+from .components.actor import Actor
+from .components.weather import Weather
+from .components.time import Time
+from .components.marker import Marker
+from ..types import *
 
-
-from scenario_generation.utils import sample_actor, sample_marker, sample_marker_in_circle, sample_pose, sample_pose_on_circle, distance_2d
+from .utils import sample_actor, sample_marker, sample_marker_in_circle, sample_pose, sample_pose_on_circle, distance_2d
 
 
 
 
 
 def sample_test_scenario():
-    gps_pose = Pose(0, 10, 0, 0)
+    gps_pose = Pose(Vector3r(0, 10, 0))
     radius = 10
     tp_marker = sample_marker_in_circle(gps_pose, radius, 'tp')
     tp_marker.id = 0
@@ -172,27 +172,6 @@ class Scenario(object):
         
         return vec_dict
     
-    def to_msg(self):
-        tp_marker_msg = self.tp_marker.to_msg()
-        drone_start_pose_msg = self.drone_start_pose.to_msg()
-        gps_pose_msg = self.gps_pose.to_msg()
-        weather_msg = self.weather.to_msg()
-        time_msg = self.time.to_msg()
-
-        fp_markers_msg = [marker.to_msg() for marker in self.fp_markers]
-        actors_msg = [actor.to_msg() for actor in self.actors]
-        msg = ScenarioMSG()
-        msg.tp_marker = tp_marker_msg
-        msg.drone_start_pose = drone_start_pose_msg
-        msg.gps_pose = gps_pose_msg
-        msg.weather = weather_msg
-        msg.time = time_msg
-        msg.fp_markers = fp_markers_msg
-        msg.actos = actors_msg
-        msg.status = 1
-
-        return msg
-
     def load_from_vec_dict(self, vec_dict):
         self.tp_marker = Marker.from_vec(vec_dict['tp_marker'])
         self.drone_start_pose = Pose.from_vec(vec_dict['drone_start_pose'])

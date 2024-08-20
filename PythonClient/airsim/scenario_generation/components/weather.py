@@ -1,5 +1,5 @@
 
-from scenario_generation.components.base_component import BaseComponent
+from .base_component import BaseComponent
 import random
 
 class Weather(BaseComponent):

@@ -1,8 +1,7 @@
-from scenario_generation.components.actor import Actor
-from scenario_generation.components.weather import Weather
-from scenario_generation.components.time import Time
-from scenario_generation.components.marker import Marker
-from scenario_generation.config import ACTOR_TYPE
+from .components.actor import Actor
+from .components.weather import Weather
+from .components.time import Time
+from .components.marker import Marker
 import random
 import math
 

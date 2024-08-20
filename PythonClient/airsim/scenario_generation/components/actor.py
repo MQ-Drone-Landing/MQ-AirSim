@@ -1,19 +1,19 @@
 
-from scenario_generation.components.base_component import BaseComponent 
-import airsim
-from scenario_generation.components.utils import pose_to_vec, pose_to_dict, pose_from_dict, pose_from_vec, mutate_pose
+from .base_component import BaseComponent 
+from ...types import *
+from .utils import pose_to_vec, pose_to_dict, pose_from_dict, pose_from_vec, mutate_pose
 import random
-from scenario_generation.components.config import ACTOR_TYPE, MODE_TYPE
+from .config import ACTOR_TYPE, MODE_TYPE
 
 
 class Actor(BaseComponent):
-    def __init__(self, type:str, start_pose:airsim.Pose, end_pose:airsim.Pose, speed, mode:str, name='actor_comp'):
+    def __init__(self, type:str, start_pose:Pose, end_pose:Pose, speed, name='actor_comp'):
         super().__init__(name)
         self.type = ACTOR_TYPE[type]
         self.start_pose = start_pose
         self.end_pose = end_pose
         self.speed = speed
-        self.mode = MODE_TYPE[mode]
+        # self.mode = MODE_TYPE[mode]
 
     def get_type_name(self):
         # get the type name by checking the ACTOR_TYPE dictionary, from the type value to get the key
