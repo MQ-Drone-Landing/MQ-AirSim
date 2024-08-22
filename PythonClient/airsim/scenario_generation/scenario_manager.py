@@ -239,6 +239,7 @@ class ScenarioManager():
         else:
             npc_name = self.client.simSpawnObject(actor.name, BP_TYPE[actor.type]+str(actor.id), actor.pose,
                                                         Vector3r(1, 1, 1), False, True)
+        print(actor.name, npc_name)
         
         # scenario objects[actor_type][actor_name]
         if BP_TYPE[actor.type] not in self.scenario_objects:
@@ -353,8 +354,10 @@ class ScenarioManager():
     # set all actors at the initial position
     def load_scenario(self):
         scenario = self.current_scenario
-
-        self.set_drone_pose(scenario.drone_start_pose)
+        if self.sim_mode == 'drone':
+            self.set_drone_pose(scenario.drone_start_pose)
+        else:
+            self.set_drone_pose(scenario.gps_pose)
 
         self.reset_env()
         time.sleep(1)
