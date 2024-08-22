@@ -235,7 +235,7 @@ class ScenarioManager():
 
         """
         if actor.type != ACTOR_TYPE['marker']:
-            npc_name = self.client.simSpawnObject(actor.name, BP_TYPE[actor.type], actor.start_pose, Vector3r(1, 1, 1), True, True)
+            npc_name = self.client.simSpawnObject(actor.name, BP_TYPE[actor.type], actor.start_pose, Vector3r(1, 1, 1), False, True)
         else:
             npc_name = self.client.simSpawnObject(actor.name, BP_TYPE[actor.type]+str(actor.id), actor.pose,
                                                         Vector3r(1, 1, 1), False, True)

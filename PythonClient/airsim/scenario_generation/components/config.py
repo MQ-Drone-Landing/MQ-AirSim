@@ -11,7 +11,7 @@ MODE_TYPE = {
 }
 
 BP_TYPE = {
-    ACTOR_TYPE['person']: 'bp_man',
-    ACTOR_TYPE['marker']: 'bp_marker0',
+    ACTOR_TYPE['person']: 'manBP',
+    ACTOR_TYPE['marker']: 'bp_marker',
     ACTOR_TYPE['bird']: 'bp_bird'
 }

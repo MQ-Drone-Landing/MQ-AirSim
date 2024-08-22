@@ -5,116 +5,7 @@ from .components.weather import Weather
 from .components.time import Time
 from .components.marker import Marker
 from ..types import *
-
-from .utils import sample_actor, sample_marker, sample_marker_in_circle, sample_pose, sample_pose_on_circle, distance_2d
-
-
-
-
-
-def sample_test_scenario():
-    gps_pose = Pose(Vector3r(0, 10, 0))
-    radius = 10
-    tp_marker = sample_marker_in_circle(gps_pose, radius, 'tp')
-    tp_marker.id = 0
-    fp_markers= []
-    drone_start_pose = Pose(0, 0, 0, 0)
-    weather = Weather(*([0] * 9))
-    time = Time(0.5, 0.5)
-    actors = []
-    for _ in range(2):
-        start_x, start_y, start_z = sample_pose_on_circle(gps_pose, 5, 0)
-        pose = Pose(start_x, start_y, start_z, 0)
-        actors.append(Actor(0, pose, pose, 0))
-
-    scenario = Scenario()
-    scenario.init(tp_marker, fp_markers, drone_start_pose, gps_pose, radius, actors, weather, time)    
-    return scenario
-
-def sample_scenario(map_config):
-
-    # first define the gps pose and the radius
-    gps_pose = sample_pose(map_config["random_pos_x"], map_config["random_pos_y"])
-    radius = 7.5
-
-    all_marker_pos = [(0, 0)]
-    # Sample a random tp_marker inside the circular region with the center gps_pos and the radius.
-    while True:
-        new_marker = sample_marker_in_circle(gps_pose, radius, 'tp')
-        new_marker.pose.z = map_config["marker_z"]
-        # print('marker z:', new_marker.z)
-        new_marker_pos = [new_marker.pose.x, new_marker.pose.y]
-        if all(distance_2d(new_marker_pos, marker_pos) > 2 for marker_pos in all_marker_pos):
-            all_marker_pos.append(new_marker_pos)
-            tp_marker = new_marker
-            break
-    # tp_marker = sample_marker_in_circle(gps_pose, radius, 'tp')
-    # all_marker_pos.append([tp_marker.pose.x, tp_marker.pose.y])
-    # Sample a random list of fp_markers 
-    fp_markers = []
-    # num_fp_markers = random.randint(0, 3)  # For example, choose up to 10 fp_markers
-    num_fp_markers = 0
-    # add valid markers that do not overlap
-    while len(all_marker_pos) < num_fp_markers + 2:
-        new_marker = sample_marker_in_circle(gps_pose, radius, 'fp')
-        new_marker.pose.z = map_config["marker_z"]
-        new_marker_pos = [new_marker.pose.x, new_marker.pose.y]
-        if all(distance_2d(new_marker_pos, marker_pos) > 2 for marker_pos in all_marker_pos):
-            new_marker.id = len(fp_markers) + 1
-            fp_markers.append(new_marker)
-            all_marker_pos.append(new_marker_pos)
-
-    # Sample random drone_start_pose
-    drone_radius = radius + random.uniform(10, 30)
-    drone_start_x, drone_start_y, drone_start_z = sample_pose_on_circle(gps_pose, drone_radius)
-    random_yaw_angle = random.uniform(0, 360)
-    drone_start_pose = Pose(drone_start_x, drone_start_y, drone_start_z, random_yaw_angle)
-
-
-    # Sample a random list of actors
-    actors = []
-    all_actor_pos = []
-    # num_actors = random.randint(1, 3)  # For example, choose up to 5 actors
-    num_actors = 3
-    print('sample number of actors: ', num_actors)
-    # for _ in range(num_actors):
-    while len(actors) < num_actors:
-        actor_type = random.choice(list(map_config["actor_type_inv"].keys()))
-        actor_radius = radius + random.uniform(0, drone_radius)
-        start_x, start_y, start_z = sample_pose_on_circle(gps_pose, actor_radius)
-        if 'bird' not in actor_type:
-            start_z = map_config["npc_z"]
-        else:
-            start_z = map_config["bird_z"] 
-        start_pos = (start_x, start_y)
-        if all(distance_2d(start_pos, actor_pos) > 1 for actor_pos in all_actor_pos):
-            start_angle = random.uniform(0, 360)
-            # current set the actor as static
-            # end_x, end_y, end_z = start_x, start_y, start_z
-            end_x, end_y, _ = sample_pose_on_circle(gps_pose, actor_radius)
-            end_z = start_z
-
-            end_angle = start_angle
-            # speed = 0
-            speed = random.uniform(0.2, 1)
-            # speed = random.uniform(0, 10)  # Example speed range
-            start_pose = Pose(start_x, start_y, start_z, start_angle)
-            end_pose = Pose(end_x, end_y, end_z, end_angle)
-            random_actor = Actor(map_config["actor_type_inv"][actor_type], start_pose, end_pose, speed)
-            all_actor_pos.append(start_pos)
-            actors.append(random_actor)
-
-
-    # Sample random weather
-    weather = Weather(*[random.uniform(0, 0.15) for _ in range(9)])  # Assuming weather conditions are binary
-
-    # Sample random time
-    time = Time(*[random.uniform(0, 1), random.uniform(0, 1)])  # Random hour and minute
-    scenario = Scenario()
-    scenario.init(tp_marker, fp_markers, drone_start_pose, gps_pose, radius, actors, weather, time)
-
-    return scenario
-
+from .components.utils import pose_to_dict
 
 
 class Scenario(object):
@@ -142,8 +33,8 @@ class Scenario(object):
     def to_json(self, save_path=None):
         json_dict = {}
         json_dict['tp_marker'] = self.tp_marker.to_dict()
-        json_dict['drone_start_pose'] = self.drone_start_pose.to_dict()
-        json_dict['gps_pose'] = self.gps_pose.to_dict()
+        json_dict['drone_start_pose'] = pose_to_dict(self.drone_start_pose)
+        json_dict['gps_pose'] = pose_to_dict(self.gps_pose)
         json_dict['radius'] = self.radius   
         json_dict['weather'] = self.weather.to_dict()
         json_dict['time'] = self.time.to_dict()
@@ -251,8 +142,8 @@ class Scenario(object):
             for i in range(len(self.actors)):
                 self.actors[i].mutate()
             
-            for i in range(num_actors - len(self.actors)):
-                self.actors.append(sample_actor(self.gps_pose))
+            # for i in range(num_actors - len(self.actors)):
+            #     self.actors.append(sample_actor(self.gps_pose))
         
         # check numbers of different types of actors
         # actor_types = {}
