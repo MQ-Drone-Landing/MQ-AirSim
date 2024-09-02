@@ -1,0 +1,88 @@
+{
+  "SettingsVersion": 1.2,
+  "SimMode": "Multirotor",
+  "ClockType": "SteppableClock",
+  "ClockSpeed": 1,
+  "Vehicles": {
+    "Copter": {
+      "VehicleType": "PX4Multirotor",
+      "UseSerial": false,
+      "LockStep": true,
+      "UseTcp": true,
+      "TcpPort": 4560,
+      "ControlPortLocal": 14541,
+      "ControlPortRemote": 14580,
+      "Sensors": {
+        "Barometer": {
+          "SensorType": 1,
+          "Enabled": true,
+          "PressureFactorSigma": 0.0001825
+        },
+        "Imu": {
+          "SensorType": 2,
+          "Enabled": true
+        }
+      },
+      "Parameters": {
+        "NAV_RCL_ACT": 0,
+        "NAV_DLL_ACT": 0,
+        "COM_OBL_ACT": 1,
+        "LPE_LAT": 47.641468,
+        "LPE_LON": -122.140165
+      },
+      "Cameras": {
+        "forward_custom": {
+          "CaptureSettings": [
+            {
+              "ImageType": 0,
+              "Width": 640,
+              "Height": 480,
+              "FOV_Degrees": 90,
+              "TargetGamma": 1.5
+            },
+            {
+              "ImageType": 1,
+              "Width": 160,
+              "Height": 120,
+              "FOV_Degrees": 90          
+            }
+          ],
+          "X": 0.35, "Y": 0, "Z": 0,
+          "Pitch": 0, "Roll": 0, "Yaw": 0
+        },
+        "downward_custom": {
+          "CaptureSettings": [
+            {
+              "PublishToRos": 1,
+              "ImageType": 0,
+              "Width": 640,
+              "Height": 480,
+              "FOV_Degrees": 90,
+              "DepthOfFieldFstop": 2.8,
+              "DepthOfFieldFocalDistance": 200.0,
+              "DepthOfFieldFocalRegion": 200.0,
+              "TargetGamma": 1.5
+            },
+	      {
+		"ImageType": 1,
+		"Width": 160,
+		"Height": 120,
+		"FOV_Degrees": 90          
+	      }
+          ],
+          "X": 0,
+          "Y": 0,
+          "Z": 0,
+          "Pitch": -90,
+          "Roll": 0,
+          "Yaw": 0
+        }
+      }
+    }
+  },
+  "SubWindows": [
+      {"WindowID": 0, "ImageType": 0, "CameraName": "forward_custom", "Visible": false},
+      {"WindowID": 1, "ImageType": 0, "CameraName": "downward_custom", "Visible": false}
+  
+    ]
+}
