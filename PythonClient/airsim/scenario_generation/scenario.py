@@ -5,8 +5,7 @@ from .components.weather import Weather
 from .components.time import Time
 from .components.marker import Marker
 from ..types import *
-from .components.utils import pose_to_dict
-
+from .components.utils import pose_to_dict, pose_from_vec, pose_from_dict
 
 class Scenario(object):
     def __init__(self, tp_marker=None, fp_markers=[], drone_start_pose=None, gps_pose=None, radius=None, actors=[], weather=None, time=None):
@@ -65,9 +64,8 @@ class Scenario(object):
     
     def load_from_vec_dict(self, vec_dict):
         self.tp_marker = Marker.from_vec(vec_dict['tp_marker'])
-        self.drone_start_pose = Pose.from_vec(vec_dict['drone_start_pose'])
-        
-        self.gps_pose = Pose.from_dict(vec_dict['gps_pose'])
+        self.drone_start_pose = pose_from_vec(vec_dict['drone_start_pose'])
+        self.gps_pose = pose_from_vec(vec_dict['gps_pose'])
 
         self.radius = vec_dict['radius']
 
@@ -92,8 +90,8 @@ class Scenario(object):
         else:
             json_dict = json_path
         self.tp_marker = Marker.from_dict(json_dict['tp_marker'])
-        self.drone_start_pose = Pose.from_dict(json_dict['drone_start_pose'])
-        self.gps_pose = Pose.from_dict(json_dict['gps_pose'])
+        self.drone_start_pose = pose_from_dict(json_dict['drone_start_pose'])
+        self.gps_pose = pose_from_dict(json_dict['gps_pose'])
         self.radius = json_dict['radius']
         self.weather = Weather.from_dict(json_dict['weather'])
         self.time = Time.from_dict(json_dict['time'])
