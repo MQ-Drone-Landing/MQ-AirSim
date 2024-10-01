@@ -4,7 +4,24 @@ from .components.time import Time
 from .components.marker import Marker
 import random
 import math
+from ..types import *
+from ..utils import to_quaternion
+import numpy as np
 
+def validate_marker_position(client, position, camera_name='ext_cam'):
+    client.simSetCameraPose(camera_name, Pose(Vector3r(position.x_val,
+                                                                    position.y_val, position.z_val - 1), to_quaternion(math.radians(-90), 0, 0)), external=True)
+    responses = client.simGetImages([ImageRequest(camera_name, 5, True, False)], external=True)
+    response = responses[0]
+    depth_img = np.array(response.image_data_float, dtype=np.float32)
+    depth_img = depth_img.reshape(response.height, response.width)
+    depth_diff = np.abs(depth_img - depth_img[int(position.y_val), int(position.x_val)])
+    print(np.max(depth_diff), np.mean(depth_diff), np.min(depth_diff))
+    if np.max(depth_diff) > 0.2:
+        print('Position ({}, {}) is not flat enough to place the marker'.format(position.x_val, position.y_val))
+        return False
+    
+    return True
 
 def sample_marker(marker_pose, type='tp'):
     if type == 'tp':

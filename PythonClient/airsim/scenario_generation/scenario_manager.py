@@ -1,4 +1,3 @@
-# import rospy
 from ..client import MultirotorClient
 from ..types import *
 from ..utils import *
@@ -142,7 +141,7 @@ class ScenarioManager():
         self.scenario_objects = {}
 
 
-    def get_current_scene(self, camera_name='0', image_type=0, image_encoding='rgb'):
+    def get_current_scene(self, camera_name='0', image_type=0, image_encoding='rgb', external=False):
         """
         Get the current scene from a camera.
 
@@ -157,15 +156,22 @@ class ScenarioManager():
 
         """
         if image_type == 0:
-            responses = self.client.simGetImages([ImageRequest(camera_name, image_type, False, False)])
-        elif image_type == 5:
-            responses = self.client.simGetImages([ImageRequest(camera_name, image_type, False, False)])
+            responses = self.client.simGetImages([ImageRequest(camera_name, image_type, False, False)], external=external)
+        else:
+            responses = self.client.simGetImages([ImageRequest(camera_name, image_type, True, False)], external=external)
+
 
         response = responses[0]
-        img1d = np.fromstring(response.image_data_uint8, dtype=np.uint8) 
-        img = img1d.reshape(response.height, response.width, 3)
-        if image_encoding == 'bgr' and image_type == 0:
-            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        if image_type == 0:
+            img1d = np.fromstring(response.image_data_uint8, dtype=np.uint8) 
+            img = img1d.reshape(response.height, response.width, 3)
+            if image_encoding == 'bgr':
+                img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        else:
+            img1d = np.array(response.image_data_float, dtype=np.float32)
+            img = img1d.reshape(response.height, response.width)
+
+
         camera_body_pose = Pose(response.camera_position, response.camera_orientation)
         
         return img, camera_body_pose
@@ -311,40 +317,6 @@ class ScenarioManager():
 
         self.client.simSetTimeOfDay(True, start_datetime = sim_time, is_start_datetime_dst = True,
          celestial_clock_speed = 1, update_interval_secs = 1, move_sun = True)
-    
-
-    def validate_scenario(self, scenario):
-        # validate and rectify the scenario in the simulation environment
-        # we need to validate whether the markers can be placed on the ground,
-        
-        # validate_tp_marker
-        while True:
-            self.set_marker(scenario.tp_marker.pose, marker_name='cube_marker{}'.format(scenario.tp_marker.id))
-            time.sleep(3)
-            marker_pose = self.get_pose('cube_marker{}'.format(scenario.tp_marker.id))
-            if abs(marker_pose.position.z_val) > 1:
-                scenario.tp_marker.mutate() 
-            else:
-                break
-        all_marker_pos = []
-        pose = self.get_pose('cube_marker{}'.format(scenario.tp_marker.id))
-        all_marker_pos.append((pose.position.x_val, pose.position.y_val))
-        # set fp_markers
-        # while len(all_marker_pos) < len(scenario.fp_markers) + 1:
-        #     while True:
-        #         fp_marker = scenario.fp_markers[len(all_marker_pos)]
-        #         self.set_marker(fp_marker.pose, marker_name='cube_marker{}'.format(fp_marker.id))
-        #         time.sleep(3)
-        #         marker_pose = self.get_pose('cube_marker{}'.format(fp_marker.id))
-        #         pos = (marker_pose.position.x_val, marker_pose.position.y_val)
-        #         if abs(marker_pose.position.z_val) > 1:
-        #             fp_marker.mutate() 
-        #         elif all(distance_2d(pos, marker_pos) > 2 for marker_pos in all_marker_pos):
-        #             pose = self.get_pose('cube_marker{}'.format(fp_marker.id))
-        #             all_marker_pos.append(pos)
-        #             break
-        
-        return scenario
 
     def set_scenario(self, scenario):
         self.current_scenario = scenario
