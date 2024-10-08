@@ -80,6 +80,20 @@
       }
     }
   },
+  "ExternalCameras": {
+    "ext_cam": {
+      "X": 0, "Y": 0, "Z": -10,
+      "Pitch": -90, "Roll": 0, "Yaw": 0,
+      "CaptureSettings": [
+        {
+          "ImageType": 0,
+          "Width": 640,
+          "Height": 480,
+          "FOV_Degrees": 90
+        }
+      ]
+    }
+  },
   "SubWindows": [
       {"WindowID": 0, "ImageType": 0, "CameraName": "forward_custom", "Visible": false},
       {"WindowID": 1, "ImageType": 0, "CameraName": "downward_custom", "Visible": false}
