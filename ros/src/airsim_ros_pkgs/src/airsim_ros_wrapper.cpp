@@ -44,8 +44,8 @@ AirsimROSWrapper::AirsimROSWrapper(const ros::NodeHandle& nh, const ros::NodeHan
     , nh_private_(nh_private)
     , host_ip_(host_ip)
     , airsim_settings_parser_(host_ip) // connects to port 41451 of host_ip by default
-    , airsim_client_images_(host_ip) // connects to port 41451 of host_ip by default
-    , airsim_client_lidar_(host_ip) // connects to port 41451 of host_ip by default
+    // , airsim_client_images_(host_ip) // connects to port 41451 of host_ip by default
+    // , airsim_client_lidar_(host_ip) // connects to port 41451 of host_ip by default
     , has_gimbal_cmd_(false)
     , tf_listener_(tf_buffer_)
 {
@@ -70,18 +70,15 @@ void AirsimROSWrapper::initialize_airsim()
     // todo do not reset if already in air?
     try {
 
-        if (airsim_mode_ == AIRSIM_MODE::DRONE) {
-            airsim_client_ = std::unique_ptr<msr::airlib::RpcLibClientBase>(new msr::airlib::MultirotorRpcLibClient(host_ip_));
-        }
-        else {
-            airsim_client_ = std::unique_ptr<msr::airlib::RpcLibClientBase>(new msr::airlib::CarRpcLibClient(host_ip_));
-        }
-        airsim_client_->confirmConnection();
-        ROS_INFO("Connected  to Airsim server!");
 
-        airsim_client_images_.confirmConnection();
-        ROS_INFO("Connected _clien_images port");
-        airsim_client_lidar_.confirmConnection();
+        airsim_client_ = std::unique_ptr<msr::airlib::RpcLibClientBase>(new msr::airlib::MultirotorRpcLibClient(host_ip_));
+        airsim_client_images_ = std::unique_ptr<msr::airlib::RpcLibClientBase>(new msr::airlib::MultirotorRpcLibClient(host_ip_));
+        airsim_client_lidar_ = std::unique_ptr<msr::airlib::RpcLibClientBase>(new msr::airlib::MultirotorRpcLibClient(host_ip_));
+
+        
+        airsim_client_images_->confirmConnection();
+        ROS_INFO("Connected _client_images port");
+        airsim_client_lidar_->confirmConnection();
         ROS_INFO("Connected _client_lidar port");
 
         for (const auto& vehicle_name_ptr_pair : vehicle_name_ptr_map_) {
@@ -1455,7 +1452,7 @@ void AirsimROSWrapper::img_response_timer_cb(const ros::TimerEvent& event)
     try {
         int image_response_idx = 0;
         for (const auto& airsim_img_request_vehicle_name_pair : airsim_img_request_vehicle_name_pair_vec_) {
-            const std::vector<ImageResponse>& img_response = airsim_client_images_.simGetImages(airsim_img_request_vehicle_name_pair.first, airsim_img_request_vehicle_name_pair.second);
+            const std::vector<ImageResponse>& img_response = airsim_client_images_->simGetImages(airsim_img_request_vehicle_name_pair.first, airsim_img_request_vehicle_name_pair.second);
             // std::cout << "get image response" << std::endl;
             if (img_response.size() == airsim_img_request_vehicle_name_pair.first.size()) {
                 process_and_publish_img_response(img_response, image_response_idx, airsim_img_request_vehicle_name_pair.second);
@@ -1477,7 +1474,7 @@ void AirsimROSWrapper::lidar_timer_cb(const ros::TimerEvent& event)
         for (auto& vehicle_name_ptr_pair : vehicle_name_ptr_map_) {
             if (!vehicle_name_ptr_pair.second->lidar_pubs.empty()) {
                 for (auto& lidar_publisher : vehicle_name_ptr_pair.second->lidar_pubs) {
-                    auto lidar_data = airsim_client_lidar_.getLidarData(lidar_publisher.sensor_name, vehicle_name_ptr_pair.first);
+                    auto lidar_data = airsim_client_lidar_->getLidarData(lidar_publisher.sensor_name, vehicle_name_ptr_pair.first);
                     sensor_msgs::PointCloud2 lidar_msg = get_lidar_msg_from_airsim(lidar_data, vehicle_name_ptr_pair.first, lidar_publisher.sensor_name);
                     lidar_publisher.publisher.publish(lidar_msg);
                 }

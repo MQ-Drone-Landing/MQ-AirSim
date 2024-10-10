@@ -344,8 +344,8 @@ private:
 
     std::unique_ptr<msr::airlib::RpcLibClientBase> airsim_client_ = nullptr;
     // seperate busy connections to airsim, update in their own thread
-    msr::airlib::RpcLibClientBase airsim_client_images_;
-    msr::airlib::RpcLibClientBase airsim_client_lidar_;
+    std::unique_ptr<msr::airlib::RpcLibClientBase> airsim_client_images_ = nullptr;
+    std::unique_ptr<msr::airlib::RpcLibClientBase> airsim_client_lidar_ = nullptr;
 
     // todo not sure if async spinners shuold be inside this class, or should be instantiated in airsim_node.cpp, and cb queues should be public
     // todo for multiple drones with multiple sensors, this won't scale. make it a part of VehicleROS?
