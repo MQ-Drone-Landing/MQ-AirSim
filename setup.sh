@@ -66,7 +66,12 @@ else #linux
         wget -O - http://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
         sudo apt-get update
     fi
-    sudo apt-get install -y clang-8 clang++-8 libc++-8-dev libc++abi-8-dev
+    # Install appropriate clang version based on Ubuntu version
+    if [ "$(lsb_release -rs)" == "22.04" ]; then
+        sudo apt-get install -y clang-14 clang++-14 libc++-14-dev libc++abi-14-dev
+    else
+        sudo apt-get install -y clang-8 clang++-8 libc++-8-dev libc++abi-8-dev
+    fi
 fi
 
 if ! which cmake; then
