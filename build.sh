@@ -63,9 +63,10 @@ if [ "$(uname)" == "Darwin" ]; then
     export CC="$(brew --prefix)/opt/llvm/bin/clang"
     export CXX="$(brew --prefix)/opt/llvm/bin/clang++"
 else
-    if $gcc; then
-        export CC="gcc-8"
-        export CXX="g++-8"
+    # Check Ubuntu version and use appropriate clang version
+    if [ "$(lsb_release -rs)" == "22.04" ]; then
+        export CC="clang-14"
+        export CXX="clang++-14"
     else
         export CC="clang-8"
         export CXX="clang++-8"
