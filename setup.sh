@@ -49,8 +49,14 @@ else #linux
         rsync \
         software-properties-common \
         wget \
-        libvulkan1 \
-        vulkan-utils
+        libvulkan1
+    
+    # Check Ubuntu version and install appropriate Vulkan package
+    if [ "$(lsb_release -rs)" == "22.04" ]; then
+        sudo apt-get -y install --no-install-recommends vulkan-tools
+    else
+        sudo apt-get -y install --no-install-recommends vulkan-utils
+    fi
 
     #install clang and build tools
     VERSION=$(lsb_release -rs | cut -d. -f1)

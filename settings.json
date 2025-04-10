@@ -90,6 +90,12 @@
           "Width": 640,
           "Height": 480,
           "FOV_Degrees": 90
+        },
+        {
+          "ImageType": 1,
+          "Width": 640,
+          "Height": 480,
+          "FOV_Degrees": 90
         }
       ]
     }

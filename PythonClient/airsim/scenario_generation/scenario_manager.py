@@ -277,8 +277,8 @@ class ScenarioManager():
 
 
         self.client.simSetVehiclePose(pose, True, vehicle_name=drone_name)
-        if self.sim_mode != 'cv':
-            self.client.armDisarm(False)
+        # if self.sim_mode != 'cv':
+        #     self.client.armDisarm(False)
         return self.client.simGetVehiclePose(drone_name)
         
 
@@ -333,8 +333,8 @@ class ScenarioManager():
 
         self.reset_env()
         time.sleep(1)
-
-        self.add_actor(scenario.tp_marker)
+        if scenario.tp_marker:
+            self.add_actor(scenario.tp_marker)
         # self.set_marker(scenario.tp_marker.pose, marker_name='cube_marker{}'.format(scenario.tp_marker.id))
         # time.sleep(3)
         # print('set marker at: ', self.get_pose('cube_marker{}'.format(scenario.tp_marker.id)))
@@ -342,8 +342,10 @@ class ScenarioManager():
             self.add_actor(marker)
         
         # set weather and time
-        self.set_weather(scenario.weather.to_vec())
-        self.set_time_of_day(scenario.time.to_vec())
+        if scenario.weather:
+            self.set_weather(scenario.weather.to_vec())
+        if scenario.time:
+            self.set_time_of_day(scenario.time.to_vec())
 
         # set dynamic actors
         for actor in scenario.actors:
