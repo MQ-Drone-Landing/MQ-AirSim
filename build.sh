@@ -74,11 +74,12 @@ else
         fi
     else
         if [ "$(lsb_release -rs)" == "22.04" ]; then
-        export CC="clang-12"
-        export CXX="clang++-12"
-    else
-        export CC="clang-8"
-        export CXX="clang++-8"
+            export CC="clang-12"
+            export CXX="clang++-12"
+        else
+            export CC="clang-8"
+            export CXX="clang++-8"
+        fi
     fi
 fi
 
