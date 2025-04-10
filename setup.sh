@@ -68,7 +68,7 @@ else #linux
     fi
     # Install appropriate clang version based on Ubuntu version
     if [ "$(lsb_release -rs)" == "22.04" ]; then
-        sudo apt-get install -y clang-14 clang++-14 libc++-14-dev libc++abi-14-dev
+        sudo apt-get install -y clang-14 clang++-12 libc++-12-dev libc++abi-12-dev
     else
         sudo apt-get install -y clang-8 clang++-8 libc++-8-dev libc++abi-8-dev
     fi
