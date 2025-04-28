@@ -53,13 +53,25 @@ set(INCLUDE_DIRS include
   ${AIRSIM_ROOT}/MavLinkCom/include
   ${AIRSIM_ROOT}/MavLinkCom/common_utils
   ${OpenCV_INCLUDE_DIRS}
-  /opt/ros/humble/include/tf2
-  /opt/ros/humble/include/tf2_geometry_msgs
-  /opt/ros/humble/include/tf2_ros
-  /opt/ros/humble/include/tf2_sensor_msgs
-  /opt/ros/humble/include/tf2_geometry_msgs
-  /opt/ros/humble/include/tf2_ros
-  /opt/ros/humble/include/mavros_msgs
+  ${rclcpp_INCLUDE_DIRS}
+  ${nav_msgs_INCLUDE_DIRS}
+  ${geographic_msgs_INCLUDE_DIRS}
+  ${std_srvs_INCLUDE_DIRS}
+  ${tf2_ros_INCLUDE_DIRS}
+  ${tf2_sensor_msgs_INCLUDE_DIRS}
+  ${rclpy_INCLUDE_DIRS}
+  ${tf2_INCLUDE_DIRS}
+  ${image_transport_INCLUDE_DIRS}
+  ${geometry_msgs_INCLUDE_DIRS}
+  ${cv_bridge_INCLUDE_DIRS}
+  ${tf2_geometry_msgs_INCLUDE_DIRS}
+  ${sensor_msgs_INCLUDE_DIRS}
+  ${mavros_msgs_INCLUDE_DIRS}
+  ${std_msgs_INCLUDE_DIRS}
+  ${rosidl_typesupport_cpp_INCLUDE_DIRS}
+  ${airsim_interfaces_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
+  
   )
 include_directories(${INCLUDE_DIRS})
 
