@@ -53,6 +53,13 @@ set(INCLUDE_DIRS include
   ${AIRSIM_ROOT}/MavLinkCom/include
   ${AIRSIM_ROOT}/MavLinkCom/common_utils
   ${OpenCV_INCLUDE_DIRS}
+  /opt/ros/humble/include/tf2
+  /opt/ros/humble/include/tf2_geometry_msgs
+  /opt/ros/humble/include/tf2_ros
+  /opt/ros/humble/include/tf2_sensor_msgs
+  /opt/ros/humble/include/tf2_geometry_msgs
+  /opt/ros/humble/include/tf2_ros
+  /opt/ros/humble/include/mavros_msgs
   )
 include_directories(${INCLUDE_DIRS})
 
